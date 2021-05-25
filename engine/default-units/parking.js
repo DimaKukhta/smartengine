@@ -63,7 +63,7 @@ class Parking {
         };
         this.publishOperationalStateChange();
 
-        this.state.countOfFreePlaces = await this.getData(this.configuration.parkingId);
+        this.state.countOfFreePlaces = await this.getData();
 
         this.operationalState = {
             status: 'OK',

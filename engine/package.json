@@ -4,10 +4,16 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "mocha"
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
-  "dependencies": {}
+  "dependencies": {
+    "querystring": "^0.2.1",
+    "thing-it-test": "0.0.32"
+  },
+  "devDependencies": {
+    "mocha": "^8.4.0"
+  }
 }
