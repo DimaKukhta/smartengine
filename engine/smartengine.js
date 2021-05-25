@@ -145,10 +145,10 @@ class Smartengine {
                     return true;
                 }
             });
-        } else {
-            console.log('All places are taken');
-            return false;
         }
+        console.log('All places are taken');
+        return false;
+
     }
 
     async releaseParkingPlace(parkingId) {
@@ -164,6 +164,7 @@ class Smartengine {
             if (res.statusCode >= 200 && res.statusCode < 300) {
                 return true;
             }
+            console.log('Error with release place');
             return false;
         });
     }

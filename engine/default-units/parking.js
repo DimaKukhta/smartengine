@@ -87,9 +87,7 @@ class Parking {
 
     async getData() {
         const freePlaces = await this.device.getData(this.configuration.parkingId);
-        if (freePlaces === -1) {
-            console.log('Error: with response');
-        } else {
+        if (freePlaces !== -1) {
             this.state.countOfFreePlaces = freePlaces;
         }
     }
@@ -102,8 +100,6 @@ class Parking {
         const isReleased = await this.device.releaseParkingPlace(this.configuration.parkingId);
         if (isReleased) {
             this.state.isReserved = false
-        } else {
-            console.log('Error with release place');
         }
     }
 }
