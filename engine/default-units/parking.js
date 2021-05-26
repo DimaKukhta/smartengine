@@ -48,13 +48,11 @@ module.exports = {
     }
 };
 
+const makeMethodsEnumerable = require('../utils/enumeratedClass');
+
+Promise.prototype.fail = Promise.prototype.catch;
+
 class Parking {
-    constructor() {
-        this.state = {
-            countOfFreePlaces: 0,
-            isReserved: false
-        }
-    }
 
     async start() {
         this.operationalState = {
@@ -63,7 +61,18 @@ class Parking {
         };
         this.publishOperationalStateChange();
 
-        this.state.countOfFreePlaces = await this.getData();
+        this.state = {
+            countOfFreePlaces: 0,
+            isReserved: false
+        }
+
+        this.publishStateChange();
+
+        this.logDebug("State of parking is: " + JSON.stringify(this.state));
+
+        await this.getData();
+
+        this.logDebug('State after:', JSON.stringify(this.state));
 
         this.operationalState = {
             status: 'OK',
@@ -87,19 +96,25 @@ class Parking {
 
     async getData() {
         const freePlaces = await this.device.getData(this.configuration.parkingId);
+        this.logDebug('Free places', JSON.stringify(freePlaces));
         if (freePlaces !== -1) {
             this.state.countOfFreePlaces = freePlaces;
         }
     }
 
     async reserve() {
+        this.logDebug('Reserve', this.state.isReserved );
         this.state.isReserved = await this.device.reserveParkingPlace(this.configuration.parkingId);
+        this.logDebug('Reserve', this.state.isReserved );
     }
 
     async release() {
         const isReleased = await this.device.releaseParkingPlace(this.configuration.parkingId);
+        this.logDebug('Released', isReleased)
         if (isReleased) {
             this.state.isReserved = false
         }
     }
 }
+
+makeMethodsEnumerable(Parking);

@@ -10,10 +10,10 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
-    "querystring": "^0.2.1",
-    "thing-it-test": "0.0.32"
+    "chai": "^4.3.4"
   },
   "devDependencies": {
-    "mocha": "^8.4.0"
+    "mocha": "^8.4.0",
+    "thing-it-test": "0.0.32"
   }
 }
