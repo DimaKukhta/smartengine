@@ -101,7 +101,7 @@ class Parking {
 
     async reserve() {
         try {
-            const isReserved = await this.device.reserveParkingPlace(this.configuration.parkingId);
+            this.state.isReserved = await this.device.reserveParkingPlace(this.configuration.parkingId);
             this.state.isReserved = isReserved;
             this.state.countOfFreePlaces--;
         } catch (e) {

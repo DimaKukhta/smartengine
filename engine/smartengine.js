@@ -126,12 +126,13 @@ class Smartengine {
                         }
                     }
                 });
-
-                req.on('error', (e) => {
-                    throw new Error(`Error with getData request: ${e.message}`);
-                });
             });
-            req.end()
+
+            req.on('error', (e) => {
+                throw new Error(`Error with getData request: ${e.message}`);
+            })
+
+            req.end();
         });
     }
 
@@ -150,8 +151,9 @@ class Smartengine {
                 const req = https.request(options, (res) => {
                     if (res.statusCode >= 200 && res.statusCode < 300) {
                         resolve(true);
+                    } else {
+                        throw new Error('Error with requst to reserve place, status code invalid')
                     }
-                    throw new Error('Error with requst to reserve place, status code invalid')
                 });
 
                 req.on('error', (e) => {
@@ -176,8 +178,9 @@ class Smartengine {
             const req = https.request(options, (res) => {
                 if (res.statusCode >= 200 && res.statusCode < 300) {
                     resolve(true);
+                } else {
+                    throw new Error('Error with realese place, status code invalid');
                 }
-                throw new Error('Error with realese place, status code invalid');
             });
 
             req.on('error', (e) => {
