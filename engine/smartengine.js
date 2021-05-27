@@ -150,7 +150,6 @@ class Smartengine {
                 const req = https.request(options, (res) => {
                     if (res.statusCode >= 200 && res.statusCode < 300) {
                         resolve(true);
-                        return;
                     }
                     throw new Error('Error with requst to reserve place, status code invalid')
                 });
@@ -177,7 +176,6 @@ class Smartengine {
             const req = https.request(options, (res) => {
                 if (res.statusCode >= 200 && res.statusCode < 300) {
                     resolve(true);
-                    return;
                 }
                 throw new Error('Error with realese place, status code invalid');
             });
