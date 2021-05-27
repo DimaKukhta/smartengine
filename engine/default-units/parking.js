@@ -68,11 +68,7 @@ class Parking {
 
         this.publishStateChange();
 
-        this.logDebug("State of parking is: " + JSON.stringify(this.state));
-
         await this.getData();
-
-        this.logDebug('State after:', JSON.stringify(this.state));
 
         this.operationalState = {
             status: 'OK',
@@ -95,24 +91,31 @@ class Parking {
     }
 
     async getData() {
-        const freePlaces = await this.device.getData(this.configuration.parkingId);
-        this.logDebug('Free places', JSON.stringify(freePlaces));
-        if (freePlaces !== -1) {
+        try {
+            const freePlaces = await this.device.getData(this.configuration.parkingId);
             this.state.countOfFreePlaces = freePlaces;
+        } catch (e) {
+            console.log('Error with getData method:', e.message);
         }
     }
 
     async reserve() {
-        this.logDebug('Reserve', this.state.isReserved );
-        this.state.isReserved = await this.device.reserveParkingPlace(this.configuration.parkingId);
-        this.logDebug('Reserve', this.state.isReserved );
+        try {
+            const isReserved = await this.device.reserveParkingPlace(this.configuration.parkingId);
+            this.state.isReserved = isReserved;
+            this.state.countOfFreePlaces--;
+        } catch (e) {
+            console.log('Error with reserve method', e.message);
+        }
     }
 
     async release() {
-        const isReleased = await this.device.releaseParkingPlace(this.configuration.parkingId);
-        this.logDebug('Released', isReleased)
-        if (isReleased) {
-            this.state.isReserved = false
+        try {
+            const isReleased = await this.device.releaseParkingPlace(this.configuration.parkingId);
+            this.state.isReserved = !isReleased
+            this.state.countOfFreePlaces++;
+        } catch (e) {
+            console.log('Error with release place:', e.message);
         }
     }
 }

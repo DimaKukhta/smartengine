@@ -37,8 +37,6 @@ module.exports = {
 const makeMethodsEnumerable = require('./utils/enumeratedClass');
 const http = require('http');
 const https = require('https');
-const { resolve } = require('path');
-const { throws } = require('assert');
 
 Promise.prototype.fail = Promise.prototype.catch;
 
@@ -89,7 +87,7 @@ class Smartengine {
             path: `/syslogin?name=${username}&password=${password}`,
             method: 'POST'
         };
-        http.request(options, (res) => {
+        const req = http.request(options, (res) => {
             if (res.statusCode === 200) {
                 this.cookie = res.headers['set-cookie'][0].split(';')[0];
                 this.isAuth = true;
@@ -97,6 +95,7 @@ class Smartengine {
         }).on('error', (e) => {
             console.error(e);
         });
+        req.end();
     }
 
     async getData(parkingId) {
@@ -123,13 +122,13 @@ class Smartengine {
                             const responseResult = JSON.parse(Buffer.concat(body).toString());
                             resolve(responseResult.free_spaces);
                         } catch (error) {
-                            reject(error.message);
+                            throw new Error(`Error with parsing data: ${error.message}`);
                         }
                     }
                 });
 
                 req.on('error', (e) => {
-                    reject(e.message);
+                    throw new Error(`Error with getData request: ${e.message}`);
                 });
             });
             req.end()
@@ -138,28 +137,26 @@ class Smartengine {
 
     async reserveParkingPlace(parkingId) {
         const countOfFreePlace = await this.getData(parkingId);
-        this.logDebug('Count of free places by getData method', countOfFreePlace)
         const options = {
             host: 'parkgard.msr-traffic.de',
             path: `/msrpocking/${this.configuration.projectId}/reserve?id=${parkingId}`,
             method: 'POST',
             headers: {
-                'Cookie': `session=${this.cookie}`,
+                'Cookie': `${this.cookie}`,
             }
         };
         return new Promise((resolve, reject) => {
             if (countOfFreePlace) {
-                this.logDebug('If count of free place is')
                 const req = https.request(options, (res) => {
                     if (res.statusCode >= 200 && res.statusCode < 300) {
-                        this.logDebug('If resolve true');
                         resolve(true);
+                        return;
                     }
-                    this.logDebug('If resolve false')
-                    resolve(false);
+                    throw new Error('Error with requst to reserve place, status code invalid')
                 });
+
                 req.on('error', (e) => {
-                    reject(e.message);
+                    throw new Error(`Error with request reserve place ${e.message}`);
                 })
 
                 req.end();
@@ -173,17 +170,23 @@ class Smartengine {
             path: `/msrpocking/${this.configuration.projectId}/release?id=${parkingId}`,
             method: 'POST',
             headers: {
-                'Cookie': `session=${this.cookie}`,
+                'Cookie': `${this.cookie}`,
             }
         };
         return new Promise((resolve, reject) => {
-            https.request(options, (res) => {
+            const req = https.request(options, (res) => {
                 if (res.statusCode >= 200 && res.statusCode < 300) {
                     resolve(true);
+                    return;
                 }
-                console.log('Error with release place');
-                resolve(false);
+                throw new Error('Error with realese place, status code invalid');
             });
+
+            req.on('error', (e) => {
+                throw new Error(`Error with request release place ${e.message}`);
+            })
+
+            req.end();
         })
     }
 }
