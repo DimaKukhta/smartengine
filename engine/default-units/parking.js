@@ -66,6 +66,8 @@ class Parking {
             isReserved: false
         }
 
+        this.logDebug('Device start');
+
         this.publishStateChange();
 
         await this.getData();
@@ -92,8 +94,8 @@ class Parking {
 
     async getData() {
         try {
-            const freePlaces = await this.device.getData(this.configuration.parkingId);
-            this.state.countOfFreePlaces = freePlaces;
+            this.state.countOfFreePlaces = await this.device.smartengine.getData(this.device.cookie, this.configuration.parkingId);
+            this.logDebug('Free places is', this.state.countOfFreePlaces);
         } catch (e) {
             console.log('Error with getData method:', e.message);
         }
@@ -101,9 +103,8 @@ class Parking {
 
     async reserve() {
         try {
-            this.state.isReserved = await this.device.reserveParkingPlace(this.configuration.parkingId);
-            this.state.isReserved = isReserved;
-            this.state.countOfFreePlaces--;
+            this.state.isReserved = await this.device.smartengine.reserveParkingPlace(this.device.cookie, this.configuration.parkingId);
+            this.state.countOfFreePlaces = await this.device.smartengine.getData(this.device.cookie, this.configuration.parkingId);
         } catch (e) {
             console.log('Error with reserve method', e.message);
         }
@@ -111,9 +112,8 @@ class Parking {
 
     async release() {
         try {
-            const isReleased = await this.device.releaseParkingPlace(this.configuration.parkingId);
-            this.state.isReserved = !isReleased
-            this.state.countOfFreePlaces++;
+            this.state.isReserved = !await this.device.smartengine.releaseParkingPlace(this.device.cookie, this.configuration.parkingId);
+            this.state.countOfFreePlaces = await this.device.smartengine.getData(this.device.cookie, this.configuration.parkingId);
         } catch (e) {
             console.log('Error with release place:', e.message);
         }
