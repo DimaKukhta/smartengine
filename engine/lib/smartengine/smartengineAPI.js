@@ -1,7 +1,6 @@
 const http = require('http');
 const https = require('https');
-
-
+const getCountOfFreePlacesOfParking = require('../../utils/countFromAllParking');
 
 class SmartengineAPI {
 
@@ -34,12 +33,12 @@ class SmartengineAPI {
         });
     }
 
-    async getData(cookie, parkingId) {
+    async getData(cookie) {
         let body = [];
 
         const options = {
             hostname: 'parkgard.msr-traffic.de',
-            path: `/msrpocking/${this.projectId}/get?id=${parkingId}`,
+            path: `https://parkgard.msr-traffic.de/msrpocking/${this.projectId}/all`,
             method: 'GET',
             headers: {
                 'Cookie': `${cookie}`,
@@ -55,8 +54,8 @@ class SmartengineAPI {
                 res.on('end', () => {
                     if (res.statusCode >= 200 && res.statusCode < 300) {
                         try {
-                            const responseResult = JSON.parse(Buffer.concat(body).toString());
-                            resolve(responseResult.free_spaces);
+                            const responseResult = Object.values(JSON.parse(Buffer.concat(body).toString()));
+                            resolve(responseResult);
                         } catch (error) {
                             throw new Error(`Error with parsing data: ${error.message}`);
                         }
@@ -73,7 +72,8 @@ class SmartengineAPI {
     }
 
     async reserveParkingPlace(cookie, parkingId) {
-        const countOfFreePlace = await this.getData(cookie, parkingId);
+        const countOfFreePlace = getCountOfFreePlacesOfParking(await this.getData(cookie, parkingId), parkingId);
+        console.log(countOfFreePlace)
         const options = {
             host: 'parkgard.msr-traffic.de',
             path: `/msrpocking/${this.projectId}/reserve?id=${parkingId}`,

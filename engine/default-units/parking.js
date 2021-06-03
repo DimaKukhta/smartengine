@@ -49,6 +49,7 @@ module.exports = {
 };
 
 const makeMethodsEnumerable = require('../utils/enumeratedClass');
+const getCountOfFreePlacesOfParking = require('../utils/countFromAllParking');
 
 Promise.prototype.fail = Promise.prototype.catch;
 
@@ -77,10 +78,18 @@ class Parking {
             message: 'foil successfully initialized'
         };
         this.publishOperationalStateChange();
+
+        this.device.on('updateData', (data) => {
+            try {
+                this.state.countOfFreePlaces = getCountOfFreePlacesOfParking(data, this.configuration.parkingId);
+            } catch (e) {
+                this.logDebug('Error with emit event', e.message);
+            }
+        });
     }
 
     async stop() {
-
+        this.device.stop();
     }
 
     getState() {
@@ -94,8 +103,8 @@ class Parking {
 
     async getData() {
         try {
-            this.state.countOfFreePlaces = await this.device.smartengine.getData(this.device.cookie, this.configuration.parkingId);
-            this.logDebug('Free places is', this.state.countOfFreePlaces);
+            const response = await this.device.smartengine.getData(this.device.cookie);
+            this.state.countOfFreePlaces = getCountOfFreePlacesOfParking(response, this.configuration.parkingId);
         } catch (e) {
             console.log('Error with getData method:', e.message);
         }
@@ -104,7 +113,7 @@ class Parking {
     async reserve() {
         try {
             this.state.isReserved = await this.device.smartengine.reserveParkingPlace(this.device.cookie, this.configuration.parkingId);
-            this.state.countOfFreePlaces = await this.device.smartengine.getData(this.device.cookie, this.configuration.parkingId);
+            await this.getData();
         } catch (e) {
             console.log('Error with reserve method', e.message);
         }
@@ -113,7 +122,7 @@ class Parking {
     async release() {
         try {
             this.state.isReserved = !await this.device.smartengine.releaseParkingPlace(this.device.cookie, this.configuration.parkingId);
-            this.state.countOfFreePlaces = await this.device.smartengine.getData(this.device.cookie, this.configuration.parkingId);
+            await this.getData();
         } catch (e) {
             console.log('Error with release place:', e.message);
         }

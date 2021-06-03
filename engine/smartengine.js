@@ -36,11 +36,14 @@ module.exports = {
 
 const makeMethodsEnumerable = require('./utils/enumeratedClass');
 const SmartengineAPI = require('./lib/smartengine/smartengineAPI');
+const EventEmitter = require('events');
 
 Promise.prototype.fail = Promise.prototype.catch;
 
-class Smartengine {
+class Smartengine extends EventEmitter {
     constructor() {
+        super();
+        console.log('start smarengine');
         this.cookie = null;
         this.isAuth = false;
     }
@@ -60,6 +63,15 @@ class Smartengine {
 
         await this.setCookieAccess();
 
+        console.log(this.cookie)
+
+        if (this.isAuth) {
+            this.timer = setInterval(async () => {
+                const data = await this.smartengine.getData(this.cookie);
+                this.emit('updateData', data);
+            }, 5000);
+        }
+
         this.operationalState = {
             status: 'OK',
             message: 'Smartengine successfully initialized'
@@ -71,6 +83,7 @@ class Smartengine {
     async setCookieAccess() {
         try {
             this.cookie = await this.smartengine.getCookieAccess();
+            this.isAuth = true;
         } catch (e) {
             this.logDebug('Error with setCookie');
         }
@@ -78,7 +91,7 @@ class Smartengine {
     }
 
     async stop() {
-
+        clearInterval(this.timer);
     }
 
     getState() {
