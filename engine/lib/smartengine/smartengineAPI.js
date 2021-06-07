@@ -1,28 +1,40 @@
+const EventEmitter = require('events');
 const http = require('http');
 const https = require('https');
 const getCountOfFreePlacesOfParking = require('../../utils/countFromAllParking');
 
-class SmartengineAPI {
+class SmartengineAPI extends EventEmitter {
 
     constructor(username, password, projectId) {
+        super();
         this.username = username;
         this.password = password;
         this.projectId = projectId;
     }
 
-    async getCookieAccess() {
+    async start() {
+        this.timer = setInterval(async () => {
+            const data = await this.getData(this.cookie);
+            this.emit('updateData', data);
+        }, 5000);
+    }
 
+    stop() {
+        clearInterval(this.timer);
+    }
+
+    async getCookieAccess() {
         const options = {
             host: 'parkgard.msr-traffic.de',
             port: '13001',
             path: `/syslogin?name=${this.username}&password=${this.password}`,
             method: 'POST'
         };
-
         return new Promise((resolve, reject) => {
             const req = http.request(options, (res) => {
                 if (res.statusCode >= 200 && res.statusCode < 300) {
-                    resolve(res.headers['set-cookie'][0].split(';')[0]);
+                    this.cookie = res.headers['set-cookie'][0].split(';')[0];
+                    resolve('Success');
                 } else {
                     throw new Error('No access');
                 }
@@ -30,10 +42,10 @@ class SmartengineAPI {
                 throw new Error(e.message);
             });
             req.end();
-        });
+        })
     }
 
-    async getData(cookie) {
+    async getData() {
         let body = [];
 
         const options = {
@@ -41,7 +53,7 @@ class SmartengineAPI {
             path: `https://parkgard.msr-traffic.de/msrpocking/${this.projectId}/all`,
             method: 'GET',
             headers: {
-                'Cookie': `${cookie}`,
+                'Cookie': `${this.cookie}`,
             }
         };
 
@@ -71,15 +83,14 @@ class SmartengineAPI {
         });
     }
 
-    async reserveParkingPlace(cookie, parkingId) {
-        const countOfFreePlace = getCountOfFreePlacesOfParking(await this.getData(cookie, parkingId), parkingId);
-        console.log(countOfFreePlace)
+    async reserveParkingPlace(parkingId) {
+        const countOfFreePlace = getCountOfFreePlacesOfParking(await this.getData(this.cookie, parkingId), parkingId);
         const options = {
             host: 'parkgard.msr-traffic.de',
             path: `/msrpocking/${this.projectId}/reserve?id=${parkingId}`,
             method: 'POST',
             headers: {
-                'Cookie': `${cookie}`,
+                'Cookie': `${this.cookie}`,
             }
         };
         return new Promise((resolve, reject) => {
@@ -101,13 +112,13 @@ class SmartengineAPI {
         })
     }
 
-    async releaseParkingPlace(cookie, parkingId) {
+    async releaseParkingPlace(parkingId) {
         const options = {
             host: 'parkgard.msr-traffic.de',
             path: `/msrpocking/${this.projectId}/release?id=${parkingId}`,
             method: 'POST',
             headers: {
-                'Cookie': `${cookie}`,
+                'Cookie': `${this.cookie}`,
             }
         };
         return new Promise((resolve, reject) => {

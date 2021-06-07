@@ -40,13 +40,7 @@ const EventEmitter = require('events');
 
 Promise.prototype.fail = Promise.prototype.catch;
 
-class Smartengine extends EventEmitter {
-    constructor() {
-        super();
-        console.log('start smarengine');
-        this.cookie = null;
-        this.isAuth = false;
-    }
+class Smartengine {
     async start() {
         this.operationalState = {
             status: 'PENDING',
@@ -61,15 +55,11 @@ class Smartengine extends EventEmitter {
 
         this.smartengine = new SmartengineAPI(username, password, this.configuration.projectId);
 
-        await this.setCookieAccess();
-
-        console.log(this.cookie)
-
-        if (this.isAuth) {
-            this.timer = setInterval(async () => {
-                const data = await this.smartengine.getData(this.cookie);
-                this.emit('updateData', data);
-            }, 5000);
+        try {
+            await this.smartengine.getCookieAccess();
+            await this.smartengine.start();
+        } catch (e) {
+            console.log(e.message)
         }
 
         this.operationalState = {
@@ -80,18 +70,8 @@ class Smartengine extends EventEmitter {
         this.publishOperationalStateChange();
     }
 
-    async setCookieAccess() {
-        try {
-            this.cookie = await this.smartengine.getCookieAccess();
-            this.isAuth = true;
-        } catch (e) {
-            this.logDebug('Error with setCookie');
-        }
-
-    }
-
     async stop() {
-        clearInterval(this.timer);
+        this.smartengine.stop();
     }
 
     getState() {
