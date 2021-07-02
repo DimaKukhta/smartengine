@@ -49,6 +49,7 @@ module.exports = {
 };
 
 const makeMethodsEnumerable = require('../utils/enumeratedClass');
+const getCountOfFreePlacesOfParking = require('../utils/countFromAllParking');
 
 Promise.prototype.fail = Promise.prototype.catch;
 
@@ -66,7 +67,11 @@ class Parking {
             isReserved: false
         }
 
+        this.logDebug('Device start');
+
         this.publishStateChange();
+
+        this.smartAPI = this.device.smartengine;
 
         await this.getData();
 
@@ -75,10 +80,17 @@ class Parking {
             message: 'foil successfully initialized'
         };
         this.publishOperationalStateChange();
+
+        this.device.smartengine.on('updateData', (data) => {
+            try {
+                this.state.countOfFreePlaces = getCountOfFreePlacesOfParking(data, this.configuration.parkingId);
+            } catch (e) {
+                this.logDebug('Error with emit event', e.message);
+            }
+        });
     }
 
     async stop() {
-
     }
 
     getState() {
@@ -92,8 +104,8 @@ class Parking {
 
     async getData() {
         try {
-            const freePlaces = await this.device.getData(this.configuration.parkingId);
-            this.state.countOfFreePlaces = freePlaces;
+            const response = await this.smartAPI.getData();
+            this.state.countOfFreePlaces = getCountOfFreePlacesOfParking(response, this.configuration.parkingId);
         } catch (e) {
             console.log('Error with getData method:', e.message);
         }
@@ -101,9 +113,8 @@ class Parking {
 
     async reserve() {
         try {
-            this.state.isReserved = await this.device.reserveParkingPlace(this.configuration.parkingId);
-            this.state.isReserved = isReserved;
-            this.state.countOfFreePlaces--;
+            this.state.isReserved = await this.smartAPI.reserveParkingPlace(this.configuration.parkingId);
+            await this.getData();
         } catch (e) {
             console.log('Error with reserve method', e.message);
         }
@@ -111,9 +122,8 @@ class Parking {
 
     async release() {
         try {
-            const isReleased = await this.device.releaseParkingPlace(this.configuration.parkingId);
-            this.state.isReserved = !isReleased
-            this.state.countOfFreePlaces++;
+            this.state.isReserved = !await this.smartAPI.releaseParkingPlace(this.configuration.parkingId);
+            await this.getData();
         } catch (e) {
             console.log('Error with release place:', e.message);
         }
